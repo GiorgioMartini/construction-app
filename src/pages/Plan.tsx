@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Draggable from "react-draggable";
+import type { DraggableData, DraggableEvent } from "react-draggable";
 import * as Popover from "@radix-ui/react-popover";
 import planImg from "../assets/plan-image.webp";
 import Pin from "../components/Pin";
@@ -107,7 +108,9 @@ export default function Plan() {
             key={t.id}
             task={t}
             selected={selected === t.id}
-            onSelect={() => setSelected(t.id)}
+            onSelect={() =>
+              setSelected((prev) => (prev === t.id ? null : t.id))
+            }
             onDragStart={() => {
               isDraggingRef.current = true;
             }}
@@ -115,15 +118,13 @@ export default function Plan() {
               // update position
               updateTaskPos(t.id, x, y);
               // allow the click that Draggable emits on stop to be ignored, then re-enable
-              setTimeout(() => {
-                isDraggingRef.current = false;
-              }, 0);
+              setTimeout(() => (isDraggingRef.current = false), 0);
             }}
             onDelete={() => deleteTask(t.id)}
           />
         ))}
 
-        {/* overlay to catch clicks (below pins) */}
+        {/* Overlay */}
         <div
           className="absolute inset-0 cursor-crosshair z-10"
           onClick={handleImgClick}
@@ -151,8 +152,12 @@ function TaskPin({
   onDragStart,
 }: PinProps) {
   const pinRef = useRef<HTMLDivElement>(null);
+  // Track if any movement occurred during this drag interaction
+  const dragged = useRef(false);
 
-  const handleStop = () => {
+  const handleStop = (_e: DraggableEvent, _data: DraggableData) => {
+    void _e;
+    void _data;
     if (!pinRef.current) return;
     const nodeRect = pinRef.current.getBoundingClientRect();
     const parentRect = (
@@ -161,10 +166,23 @@ function TaskPin({
     const xPct = ((nodeRect.left - parentRect.left) / parentRect.width) * 100;
     const yPct = ((nodeRect.top - parentRect.top) / parentRect.height) * 100;
     onDragEnd(xPct, yPct);
+
+    // If there was no drag movement, treat this as a click to toggle the popover
+    if (!dragged.current) onSelect();
   };
 
   return (
-    <Draggable nodeRef={pinRef} onStart={onDragStart} onStop={handleStop}>
+    <Draggable
+      nodeRef={pinRef}
+      onStart={() => {
+        dragged.current = false;
+        onDragStart();
+      }}
+      onDrag={() => {
+        dragged.current = true;
+      }}
+      onStop={handleStop}
+    >
       <div
         ref={pinRef}
         style={{
@@ -178,10 +196,7 @@ function TaskPin({
           e.preventDefault();
           onDelete();
         }}
-        onClick={(e) => {
-          if (e.shiftKey) onSelect();
-          e.stopPropagation();
-        }}
+        // Remove click handler – selection handled on drag stop when no movement
         className="cursor-pointer select-none z-50"
       >
         <Pin onHover={() => console.log("hovering")} />
