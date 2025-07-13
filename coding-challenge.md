@@ -36,10 +36,9 @@ High-level:
    Everything should be handled inside the DB. Multiple users should be able to login. No real authentication necessary. If the user doesn’t exist, a new user is created. The data from the users is separated so that user A can’t access Data of user B.
 
 2. **Plan view**
-   - Load the supplied example-construction plan:
-     someimage.jpg
+   - Load the supplied example-construction plan: src/assets/plan-image.webp
    - User should be able to add tasks. The tasks will be shown in a board/list and on the plan
-     ![Untitled](https://prod-files-secure.s3.us-west-2.amazonaws.com/c0e5ea69-8984-447d-993c-ea3e88115d43/1ef40e80-935b-43e6-adfb-77d905bf3f8e/Untitled.png)
+     src/assets/tasks-on-plan-example.webp
 3. **Add / edit task and checklists**
    - Each task will have
      - A title
