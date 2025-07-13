@@ -37,7 +37,7 @@ High-level:
 
 2. **Plan view**
    - Load the supplied example-construction plan:
-     ![image.png](attachment:faccddd0-fa51-4ae3-a40b-effcefaf974c:image.png)
+     someimage.jpg
    - User should be able to add tasks. The tasks will be shown in a board/list and on the plan
      ![Untitled](https://prod-files-secure.s3.us-west-2.amazonaws.com/c0e5ea69-8984-447d-993c-ea3e88115d43/1ef40e80-935b-43e6-adfb-77d905bf3f8e/Untitled.png)
 3. **Add / edit task and checklists**
