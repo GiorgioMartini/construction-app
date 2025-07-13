@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Draggable from "react-draggable";
 import * as Popover from "@radix-ui/react-popover";
 import planImg from "../assets/plan-image.webp";
+import Pin from "../components/Pin";
 import { useAppStore } from "../store";
 import type { Task, ChecklistItem } from "../models/tasks";
 import type { RxDocument } from "rxdb";
@@ -182,10 +183,9 @@ function TaskPin({
         }}
         className="cursor-pointer select-none z-50"
       >
-        {/* visible red pin */}
-        <div className="w-5 h-5 bg-red-600 rounded-full border-2 border-white shadow-lg pointer-events-none" />
+        <Pin onHover={() => console.log("hovering")} />
         YOLO
-        {/* popover attached to invisible anchor */}
+        {/* popover */}
         <Popover.Root open={selected} onOpenChange={() => onSelect()}>
           <Popover.Anchor asChild>
             <span className="sr-only">anchor</span>
