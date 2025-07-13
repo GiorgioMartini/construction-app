@@ -25,6 +25,9 @@ export default function Plan() {
   const [selected, setSelected] = useState<string | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
 
+  // Track if we are currently dragging a pin so we can ignore click events that would create a new one
+  const isDraggingRef = useRef(false);
+
   // load tasks for current user
   useEffect(() => {
     if (!db || !user) return;
@@ -76,6 +79,8 @@ export default function Plan() {
   };
 
   const handleImgClick = (e: React.MouseEvent) => {
+    // If a drag just occurred, ignore this click so we don't create a new pin
+    if (isDraggingRef.current) return;
     if (!imgRef.current) return;
     // Ignore when holding shift (reserved for menu trigger)
     if (e.shiftKey) return;
@@ -101,7 +106,17 @@ export default function Plan() {
             task={t}
             selected={selected === t.id}
             onSelect={() => setSelected(t.id)}
-            onDragEnd={(x, y) => updateTaskPos(t.id, x, y)}
+            onDragStart={() => {
+              isDraggingRef.current = true;
+            }}
+            onDragEnd={(x, y) => {
+              // update position
+              updateTaskPos(t.id, x, y);
+              // allow the click that Draggable emits on stop to be ignored, then re-enable
+              setTimeout(() => {
+                isDraggingRef.current = false;
+              }, 0);
+            }}
             onDelete={() => deleteTask(t.id)}
           />
         ))}
@@ -120,11 +135,19 @@ interface PinProps {
   task: Task;
   selected: boolean;
   onSelect: () => void;
+  onDragStart: () => void;
   onDragEnd: (xPct: number, yPct: number) => void;
   onDelete: () => void;
 }
 
-function TaskPin({ task, selected, onSelect, onDragEnd, onDelete }: PinProps) {
+function TaskPin({
+  task,
+  selected,
+  onSelect,
+  onDragEnd,
+  onDelete,
+  onDragStart,
+}: PinProps) {
   const pinRef = useRef<HTMLDivElement>(null);
 
   const handleStop = () => {
@@ -139,7 +162,7 @@ function TaskPin({ task, selected, onSelect, onDragEnd, onDelete }: PinProps) {
   };
 
   return (
-    <Draggable nodeRef={pinRef} onStop={handleStop}>
+    <Draggable nodeRef={pinRef} onStart={onDragStart} onStop={handleStop}>
       <div
         ref={pinRef}
         style={{
