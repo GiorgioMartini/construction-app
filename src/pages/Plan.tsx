@@ -43,6 +43,7 @@ export default function Plan() {
 
   // helpers
   const addTask = async (xPct: number, yPct: number) => {
+    console.log("addTask", xPct, yPct);
     const newTask: Task = {
       id: nanoid(),
       userId: user ?? "anon",
@@ -93,7 +94,7 @@ export default function Plan() {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="relative inline-block" onClickCapture={handleImgClick}>
+      <div className="relative inline-block">
         <img
           ref={imgRef}
           src={planImg}
