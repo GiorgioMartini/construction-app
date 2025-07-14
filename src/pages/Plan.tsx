@@ -179,9 +179,10 @@ function TaskPin({
       pinRef.current.parentElement as HTMLElement
     ).getBoundingClientRect();
 
-    // centre of the 20×20 dot
-    const centerX = nodeRect.left - parentRect.left + nodeRect.width / 2;
-    const centerY = nodeRect.top - parentRect.top + nodeRect.height / 2;
+    // nodeRect.left/top already represent the pin's saved centre because the actual dot is translated inside.
+    // Therefore we must NOT add half the width/height here, otherwise we shift ~10px on each click.
+    const centerX = nodeRect.left - parentRect.left;
+    const centerY = nodeRect.top - parentRect.top;
     const xPct = (centerX / parentRect.width) * 100;
     const yPct = (centerY / parentRect.height) * 100;
 
