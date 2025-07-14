@@ -41,8 +41,6 @@ export default function Plan() {
     })();
   }, [db, user]);
 
-  // removed debug effect that logged task updates
-
   // helpers
   const addTask = async (xPct: number, yPct: number) => {
     const newTask: Task = {
@@ -87,6 +85,7 @@ export default function Plan() {
   };
 
   const deleteTask = async (taskId: string) => {
+    console.log("[deleteTask] taskId", taskId);
     if (!db) return;
     const doc = await db.tasks!.findOne(taskId).exec();
     if (doc) await doc.remove();
@@ -197,6 +196,7 @@ function TaskPin({
   return (
     <Draggable
       nodeRef={pinRef}
+      handle="#pin"
       onStart={() => {
         dragged.current = false;
         onDragStart();
@@ -229,7 +229,7 @@ function TaskPin({
             </Popover.Anchor>
             <Popover.Content
               sideOffset={8}
-              className="rounded border bg-white p-4 shadow-lg w-40"
+              className="rounded border bg-white p-4 shadow-lg w-40 z-50"
             >
               <div className="flex justify-between items-center mb-2">
                 <span className="font-semibold text-sm">Task</span>
