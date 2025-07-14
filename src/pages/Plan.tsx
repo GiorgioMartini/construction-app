@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import Draggable from "react-draggable";
-import type { DraggableData, DraggableEvent } from "react-draggable";
 import * as Popover from "@radix-ui/react-popover";
 import planImg from "../assets/plan-image.webp";
 import { useAppStore } from "../store";
@@ -35,11 +34,14 @@ export default function Plan() {
     (async () => {
       const col = db.tasks!;
       const docs = await col.find({ selector: { userId: user } }).exec();
-      setTasks(
-        docs.map((d: RxDocument<Task>) => d.toJSON() as unknown as Task)
+      const loaded = docs.map(
+        (d: RxDocument<Task>) => d.toJSON() as unknown as Task
       );
+      setTasks(loaded);
     })();
   }, [db, user]);
+
+  // removed debug effect that logged task updates
 
   // helpers
   const addTask = async (xPct: number, yPct: number) => {
@@ -52,25 +54,36 @@ export default function Plan() {
       checklist: DEFAULT_CHECKLIST,
       updatedAt: Date.now(),
     };
-
     if (db && user) {
       try {
         await db.tasks!.insert(newTask);
       } catch (err) {
-        console.error(err);
+        console.error("[addTask] DB insert error", err);
       }
     }
-
     setTasks((prev) => [...prev, newTask]);
   };
 
   const updateTaskPos = async (taskId: string, xPct: number, yPct: number) => {
-    if (!db) return;
+    if (!db) {
+      return;
+    }
     const doc = await db.tasks!.findOne(taskId).exec();
-    if (doc) await doc.incrementalModify({ xPct, yPct, updatedAt: Date.now() });
-    setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, xPct, yPct } : t))
-    );
+    if (!doc) {
+      return;
+    }
+    await doc.incrementalModify((d: Task) => ({
+      ...d,
+      xPct,
+      yPct,
+      updatedAt: Date.now(),
+    }));
+    setTasks((prev) => {
+      const updated = prev.map((t) =>
+        t.id === taskId ? { ...t, xPct, yPct } : t
+      );
+      return updated;
+    });
   };
 
   const deleteTask = async (taskId: string) => {
@@ -107,7 +120,7 @@ export default function Plan() {
         />
         {tasks.map((t) => (
           <TaskPin
-            key={t.id}
+            key={`${t.id}-${t.xPct.toFixed(2)}-${t.yPct.toFixed(2)}`}
             task={t}
             selected={selected === t.id}
             onSelect={() =>
@@ -123,8 +136,6 @@ export default function Plan() {
               setTimeout(() => (isDraggingRef.current = false), 0);
             }}
             onDelete={() => {
-              // eslint-disable-next-line no-debugger
-              debugger;
               deleteTask(t.id);
             }}
           />
@@ -162,19 +173,24 @@ function TaskPin({
   const dragged = useRef(false);
   // const [isbeingHovered, setIsbeingHovered] = useState(false);
 
-  const handleStop = (_e: DraggableEvent, _data: DraggableData) => {
-    void _e;
-    void _data;
+  const handleStop = () => {
     if (!pinRef.current) return;
     const nodeRect = pinRef.current.getBoundingClientRect();
     const parentRect = (
       pinRef.current.parentElement as HTMLElement
     ).getBoundingClientRect();
-    const xPct = ((nodeRect.left - parentRect.left) / parentRect.width) * 100;
-    const yPct = ((nodeRect.top - parentRect.top) / parentRect.height) * 100;
+
+    // centre of the 20×20 dot
+    const centerX = nodeRect.left - parentRect.left + nodeRect.width / 2;
+    const centerY = nodeRect.top - parentRect.top + nodeRect.height / 2;
+    const xPct = (centerX / parentRect.width) * 100;
+    const yPct = (centerY / parentRect.height) * 100;
+
     onDragEnd(xPct, yPct);
 
-    // If there was no drag movement, treat this as a click to toggle the popover
+    // drop the inline transform added by react-draggable
+    pinRef.current.style.transform = "";
+
     if (!dragged.current) onSelect();
   };
 
@@ -190,53 +206,49 @@ function TaskPin({
       }}
       onStop={handleStop}
     >
+      {/* OUTER wrapper: positioned at saved centre */}
       <div
         ref={pinRef}
         style={{
           position: "absolute",
           left: `${task.xPct}%`,
           top: `${task.yPct}%`,
-          transform: "translate(-50%, -50%)",
           zIndex: 20,
         }}
-        // Remove click handler – selection handled on drag stop when no movement
         className="cursor-pointer select-none z-50"
       >
-        <div
-          id="pin"
-          className="w-5 h-5 bg-red-600 rounded-full border-2 border-white shadow-lg"
-          onMouseEnter={() => {
-            // setIsbeingHovered(true);
-            console.log("hovering");
-          }}
-        />
-        YOLO
-        {/* popover */}
-        <Popover.Root open={selected} onOpenChange={() => onSelect()}>
-          <Popover.Anchor asChild>
-            <span className="sr-only">anchor</span>
-          </Popover.Anchor>
-          <Popover.Content
-            sideOffset={8}
-            className="rounded border bg-white p-4 shadow-lg w-40"
-          >
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-semibold text-sm">Task</span>
-              <button
-                onClick={() => onSelect()}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ×
-              </button>
-            </div>
-            <button
-              onClick={onDelete}
-              className="text-red-600 hover:underline text-sm"
+        {/* INNER wrapper: centres the dot */}
+        <div style={{ transform: "translate(-50%, -50%)" }}>
+          <div
+            id="pin"
+            className="w-5 h-5 bg-red-600 rounded-full border-2 border-white shadow-lg"
+          />
+          <Popover.Root open={selected} onOpenChange={onSelect}>
+            <Popover.Anchor asChild>
+              <span className="sr-only">anchor</span>
+            </Popover.Anchor>
+            <Popover.Content
+              sideOffset={8}
+              className="rounded border bg-white p-4 shadow-lg w-40"
             >
-              Delete
-            </button>
-          </Popover.Content>
-        </Popover.Root>
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-semibold text-sm">Task</span>
+                <button
+                  onClick={onSelect}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ×
+                </button>
+              </div>
+              <button
+                onClick={onDelete}
+                className="text-red-600 hover:underline text-sm"
+              >
+                Delete
+              </button>
+            </Popover.Content>
+          </Popover.Root>
+        </div>
       </div>
     </Draggable>
   );
