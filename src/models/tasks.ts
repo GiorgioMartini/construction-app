@@ -9,6 +9,7 @@ export const ChecklistStatus = {
 
 export type ChecklistStatus =
   (typeof ChecklistStatus)[keyof typeof ChecklistStatus];
+
 export interface ChecklistItem {
   id: string;
   text: string;
