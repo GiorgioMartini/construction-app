@@ -3,7 +3,6 @@ import Draggable from "react-draggable";
 import type { DraggableData, DraggableEvent } from "react-draggable";
 import * as Popover from "@radix-ui/react-popover";
 import planImg from "../assets/plan-image.webp";
-import Pin from "../components/Pin";
 import { useAppStore } from "../store";
 import type { Task, ChecklistItem } from "../models/tasks";
 import type { RxDocument } from "rxdb";
@@ -44,7 +43,6 @@ export default function Plan() {
 
   // helpers
   const addTask = async (xPct: number, yPct: number) => {
-    console.log("addTask", xPct, yPct);
     const newTask: Task = {
       id: nanoid(),
       userId: user ?? "anon",
@@ -54,6 +52,7 @@ export default function Plan() {
       checklist: DEFAULT_CHECKLIST,
       updatedAt: Date.now(),
     };
+
     if (db && user) {
       try {
         await db.tasks!.insert(newTask);
@@ -61,6 +60,7 @@ export default function Plan() {
         console.error(err);
       }
     }
+
     setTasks((prev) => [...prev, newTask]);
   };
 
@@ -84,7 +84,9 @@ export default function Plan() {
   const handleImgClick = (e: React.MouseEvent) => {
     // If a drag just occurred, ignore this click so we don't create a new pin
     if (isDraggingRef.current) return;
+
     if (!imgRef.current) return;
+
     // Ignore when holding shift (reserved for menu trigger)
     if (e.shiftKey) return;
     const rect = imgRef.current.getBoundingClientRect();
@@ -120,7 +122,11 @@ export default function Plan() {
               // allow the click that Draggable emits on stop to be ignored, then re-enable
               setTimeout(() => (isDraggingRef.current = false), 0);
             }}
-            onDelete={() => deleteTask(t.id)}
+            onDelete={() => {
+              // eslint-disable-next-line no-debugger
+              debugger;
+              deleteTask(t.id);
+            }}
           />
         ))}
 
@@ -154,6 +160,7 @@ function TaskPin({
   const pinRef = useRef<HTMLDivElement>(null);
   // Track if any movement occurred during this drag interaction
   const dragged = useRef(false);
+  // const [isbeingHovered, setIsbeingHovered] = useState(false);
 
   const handleStop = (_e: DraggableEvent, _data: DraggableData) => {
     void _e;
@@ -192,14 +199,17 @@ function TaskPin({
           transform: "translate(-50%, -50%)",
           zIndex: 20,
         }}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          onDelete();
-        }}
         // Remove click handler – selection handled on drag stop when no movement
         className="cursor-pointer select-none z-50"
       >
-        <Pin onHover={() => console.log("hovering")} />
+        <div
+          id="pin"
+          className="w-5 h-5 bg-red-600 rounded-full border-2 border-white shadow-lg"
+          onMouseEnter={() => {
+            // setIsbeingHovered(true);
+            console.log("hovering");
+          }}
+        />
         YOLO
         {/* popover */}
         <Popover.Root open={selected} onOpenChange={() => onSelect()}>

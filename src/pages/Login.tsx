@@ -15,20 +15,13 @@ export default function Login() {
 
     try {
       localStorage.setItem("username", username);
-
       const db = await initDB(`construction_${username}`);
-
-      // ensure the user doc exists (id = username)
       await db.users!.upsert({ id: username, createdAt: Date.now() });
-
       setUser(username, db);
-      // Log the user and db after setting
-      console.log("[Login] User set in Zustand:", username);
-      console.log("[Login] DB instance set in Zustand:", db);
       navigate("/plan");
     } catch (err) {
-      // Log any error during login
-      console.error("[Login] Error during login:", err);
+      console.error("Login error:", err);
+      localStorage.removeItem("username");
     }
   };
 
