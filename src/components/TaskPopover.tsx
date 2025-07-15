@@ -4,6 +4,7 @@ import { Trash2 } from "lucide-react";
 import type { Task } from "../models/tasks";
 import { ChecklistStatus } from "../models/tasks";
 import { getStatusBgClass } from "./statusColors";
+import EditableText from "./EditableText";
 
 export interface TaskPopoverProps {
   task: Task;
@@ -12,6 +13,7 @@ export interface TaskPopoverProps {
   onDelete: () => void;
   onAddItem: (text: string) => void;
   onStatusChange: (itemId: string, status: ChecklistStatus) => void;
+  onTitleChange: (newTitle: string) => void;
 }
 
 export default function TaskPopover({
@@ -21,6 +23,7 @@ export default function TaskPopover({
   onDelete,
   onAddItem,
   onStatusChange,
+  onTitleChange,
 }: TaskPopoverProps) {
   const [newItemText, setNewItemText] = useState("");
 
@@ -42,9 +45,11 @@ export default function TaskPopover({
       >
         {/* Header */}
         <div className="flex items-center mb-2">
-          <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">
-            Task
-          </span>
+          <EditableText
+            text={task.title}
+            onSave={onTitleChange}
+            className="font-semibold text-sm text-gray-800 dark:text-gray-100"
+          />
           <button
             onClick={onDelete}
             aria-label="Delete Task"

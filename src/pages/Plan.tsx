@@ -163,6 +163,27 @@ export default function Plan() {
     );
   };
 
+  // Update task title
+  const updateTaskTitle = async (taskId: string, newTitle: string) => {
+    if (db) {
+      try {
+        const doc = await db.tasks!.findOne(taskId).exec();
+        if (doc)
+          await doc.incrementalModify((currentTask: Task) => ({
+            ...currentTask,
+            title: newTitle,
+            updatedAt: Date.now(),
+          }));
+      } catch (err) {
+        console.error("[updateTaskTitle]", err);
+      }
+    }
+
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, title: newTitle } : t))
+    );
+  };
+
   const handleImgClick = (e: React.MouseEvent) => {
     // If a drag just occurred, ignore this click so we don't create a new pin
     if (isDraggingRef.current) return;
@@ -186,6 +207,7 @@ export default function Plan() {
         tasks={tasks}
         onDeleteTask={deleteTask}
         onStatusChange={updateChecklistStatus}
+        onTitleChange={updateTaskTitle}
         selectedTaskId={selected}
         onTaskSelect={(id) => setSelected((prev) => (prev === id ? null : id))}
       />
@@ -221,6 +243,7 @@ export default function Plan() {
             onStatusChange={(itemId, status) =>
               updateChecklistStatus(task.id, itemId, status as ChecklistStatus)
             }
+            onTitleChange={(newTitle) => updateTaskTitle(task.id, newTitle)}
           />
         ))}
 

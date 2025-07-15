@@ -13,6 +13,7 @@ export interface TaskPinProps {
   onDelete: () => void;
   onAddItem: (text: string) => void;
   onStatusChange: (itemId: string, status: ChecklistStatus) => void;
+  onTitleChange: (newTitle: string) => void;
 }
 
 /**
@@ -28,6 +29,7 @@ export default function TaskPin({
   onDragStart,
   onAddItem,
   onStatusChange,
+  onTitleChange,
 }: TaskPinProps) {
   const pinRef = useRef<HTMLDivElement>(null);
   const wasDragged = useRef(false);
@@ -93,6 +95,7 @@ export default function TaskPin({
             onDelete={onDelete}
             onAddItem={onAddItem}
             onStatusChange={onStatusChange}
+            onTitleChange={onTitleChange}
           />
         </div>
       </div>

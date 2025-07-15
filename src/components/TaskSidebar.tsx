@@ -2,6 +2,7 @@ import { ChecklistStatus } from "../models/tasks";
 import type { Task } from "../models/tasks";
 import { Trash2, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { getStatusBgClass } from "./statusColors";
+import EditableText from "./EditableText";
 
 export interface TaskSidebarProps {
   tasks: Task[];
@@ -15,6 +16,7 @@ export interface TaskSidebarProps {
   ) => void | Promise<void>;
   selectedTaskId: string | null;
   onTaskSelect: (taskId: string) => void;
+  onTitleChange: (taskId: string, newTitle: string) => void;
 }
 
 /**
@@ -27,6 +29,7 @@ export default function TaskSidebar({
   onToggle,
   onDeleteTask,
   onStatusChange,
+  onTitleChange,
   selectedTaskId,
   onTaskSelect,
 }: TaskSidebarProps) {
@@ -64,9 +67,11 @@ export default function TaskSidebar({
           >
             {/* Task header */}
             <div className="flex items-center mb-2">
-              <h3 className="font-semibold text-sm flex-1 text-gray-800 dark:text-gray-100 truncate">
-                {task.title}
-              </h3>
+              <EditableText
+                text={task.title}
+                onSave={(newTitle) => onTitleChange(task.id, newTitle)}
+                className="font-semibold text-sm flex-1 text-gray-800 dark:text-gray-100 truncate"
+              />
               <button
                 onClick={(e) => {
                   e.stopPropagation();
