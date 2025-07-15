@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import planImg from "../assets/plan-image.webp";
 import { useAppStore } from "../store";
 import type { Task, ChecklistItem } from "../models/tasks";
-import type { RxDocument } from "rxdb";
 import { ChecklistStatus } from "../models/tasks";
 import { nanoid } from "nanoid";
 import TaskPin from "../components/TaskPin";
 import TaskSidebar from "../components/TaskSidebar";
+import { TaskRepository } from "../services";
 
 const DEFAULT_CHECKLIST: ChecklistItem[] = [
   { id: nanoid(), text: "Measure area", status: ChecklistStatus.FinalCheck },
@@ -24,103 +24,90 @@ export default function Plan() {
   // If dragging, we can ignore click events that would create a new one
   const isDraggingRef = useRef(false);
 
+  // Create repository instance when db is available
+  const taskRepository = useMemo(() => {
+    if (!db) return null;
+    return new TaskRepository(db);
+  }, [db]);
+
   // load tasks for current user
   useEffect(() => {
-    if (!db || !user) return;
-    (async () => {
-      const col = db.tasks!;
-      const docs = await col.find({ selector: { userId: user } }).exec();
-      const loaded = docs.map(
-        (d: RxDocument<Task>) => d.toJSON() as unknown as Task
-      );
-      setTasks(loaded);
-      console.log("[Plan] loaded", loaded.length, "tasks", loaded);
-    })();
-  }, [db, user]);
+    if (!taskRepository || !user) return;
+
+    const loadTasks = async () => {
+      try {
+        const loaded = await taskRepository.getTasks(user);
+        setTasks(loaded);
+        console.log("[Plan] loaded", loaded.length, "tasks", loaded);
+      } catch (error) {
+        console.error("[Plan] Failed to load tasks:", error);
+      }
+    };
+
+    loadTasks();
+  }, [taskRepository, user]);
 
   // helpers
   const addTask = async (xPct: number, yPct: number) => {
-    const newTask: Task = {
-      id: nanoid(),
-      userId: user ?? "anon",
-      title: "New task",
-      xPct,
-      yPct,
-      checklist: DEFAULT_CHECKLIST,
-      updatedAt: Date.now(),
-    };
-    if (db && user) {
-      try {
-        await db.tasks!.insert(newTask);
-      } catch (err) {
-        console.error("[addTask] DB insert error", err);
-      }
+    if (!taskRepository || !user) return;
+
+    try {
+      const newTask = await taskRepository.createTask({
+        userId: user,
+        title: "New task",
+        xPct,
+        yPct,
+        checklist: DEFAULT_CHECKLIST,
+      });
+      setTasks((prev) => [...prev, newTask]);
+    } catch (error) {
+      console.error("[addTask] Failed to create task:", error);
     }
-    setTasks((prev) => [...prev, newTask]);
   };
 
   const updateTaskPos = async (taskId: string, xPct: number, yPct: number) => {
-    if (!db) {
-      return;
-    }
-    const doc = await db.tasks!.findOne(taskId).exec();
-    if (!doc) {
-      return;
-    }
-    await doc.incrementalModify((d: Task) => ({
-      ...d,
-      xPct,
-      yPct,
-      updatedAt: Date.now(),
-    }));
-    setTasks((prev) => {
-      const updated = prev.map((t) =>
-        t.id === taskId ? { ...t, xPct, yPct } : t
+    if (!taskRepository) return;
+
+    try {
+      await taskRepository.updateTaskPosition(taskId, xPct, yPct);
+      setTasks((prev) =>
+        prev.map((t) => (t.id === taskId ? { ...t, xPct, yPct } : t))
       );
-      return updated;
-    });
+    } catch (error) {
+      console.error("[updateTaskPos] Failed to update task position:", error);
+    }
   };
 
   const deleteTask = async (taskId: string) => {
-    if (!db) return;
-    const doc = await db.tasks!.findOne(taskId).exec();
-    if (doc) await doc.remove();
-    setTasks((prev) => prev.filter((t) => t.id !== taskId));
-    if (selected === taskId) setSelected(null);
+    if (!taskRepository) return;
+
+    try {
+      await taskRepository.deleteTask(taskId);
+      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      if (selected === taskId) setSelected(null);
+    } catch (error) {
+      console.error("[deleteTask] Failed to delete task:", error);
+    }
   };
 
   // Add new checklist item to a task
   const addChecklistItem = async (taskId: string, text: string) => {
-    const newItem: ChecklistItem = {
-      id: nanoid(),
-      text,
-      status: ChecklistStatus.NotStarted,
-    };
+    if (!taskRepository) return;
 
-    // Persist to DB first (best-effort)
-    if (db) {
-      try {
-        const doc = await db.tasks!.findOne(taskId).exec();
-        if (doc) {
-          await doc.incrementalModify((d: Task) => ({
-            ...d,
-            checklist: [...d.checklist, newItem],
-            updatedAt: Date.now(),
-          }));
-        }
-      } catch (err) {
-        console.error("[addChecklistItem] DB update error", err);
-      }
+    try {
+      const newItem = await taskRepository.addChecklistItem(taskId, text);
+
+      // Update local state so UI feels snappy
+      setTasks((previousTasks) =>
+        previousTasks.map((task) =>
+          task.id === taskId
+            ? { ...task, checklist: [...task.checklist, newItem] }
+            : task
+        )
+      );
+    } catch (error) {
+      console.error("[addChecklistItem] Failed to add checklist item:", error);
     }
-
-    // Update local state so UI feels snappy
-    setTasks((previousTasks) =>
-      previousTasks.map((task) =>
-        task.id === taskId
-          ? { ...task, checklist: [...task.checklist, newItem] }
-          : task
-      )
-    );
   };
 
   // Update status of an existing checklist item
@@ -129,59 +116,42 @@ export default function Plan() {
     itemId: string,
     status: ChecklistStatus
   ) => {
-    if (db) {
-      try {
-        const taskDoc = await db.tasks!.findOne(taskId).exec();
-        if (taskDoc)
-          await taskDoc.incrementalModify((currentTask: Task) => ({
-            ...currentTask,
-            checklist: currentTask.checklist.map((checklistItem) =>
-              checklistItem.id === itemId
-                ? { ...checklistItem, status }
-                : checklistItem
-            ),
-            updatedAt: Date.now(),
-          }));
-      } catch (err) {
-        console.error("[updateChecklistStatus]", err);
-      }
-    }
+    if (!taskRepository) return;
 
-    setTasks((previousTasks) =>
-      previousTasks.map((task) =>
-        task.id === taskId
-          ? {
-              ...task,
-              checklist: task.checklist.map((checklistItem) =>
-                checklistItem.id === itemId
-                  ? { ...checklistItem, status }
-                  : checklistItem
-              ),
-            }
-          : task
-      )
-    );
+    try {
+      await taskRepository.updateChecklistStatus(taskId, itemId, status);
+
+      setTasks((previousTasks) =>
+        previousTasks.map((task) =>
+          task.id === taskId
+            ? {
+                ...task,
+                checklist: task.checklist.map((checklistItem) =>
+                  checklistItem.id === itemId
+                    ? { ...checklistItem, status }
+                    : checklistItem
+                ),
+              }
+            : task
+        )
+      );
+    } catch (error) {
+      console.error("[updateChecklistStatus] Failed to update status:", error);
+    }
   };
 
   // Update task title
   const updateTaskTitle = async (taskId: string, newTitle: string) => {
-    if (db) {
-      try {
-        const doc = await db.tasks!.findOne(taskId).exec();
-        if (doc)
-          await doc.incrementalModify((currentTask: Task) => ({
-            ...currentTask,
-            title: newTitle,
-            updatedAt: Date.now(),
-          }));
-      } catch (err) {
-        console.error("[updateTaskTitle]", err);
-      }
-    }
+    if (!taskRepository) return;
 
-    setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, title: newTitle } : t))
-    );
+    try {
+      await taskRepository.updateTaskTitle(taskId, newTitle);
+      setTasks((prev) =>
+        prev.map((t) => (t.id === taskId ? { ...t, title: newTitle } : t))
+      );
+    } catch (error) {
+      console.error("[updateTaskTitle] Failed to update title:", error);
+    }
   };
 
   const handleImgClick = (e: React.MouseEvent) => {
