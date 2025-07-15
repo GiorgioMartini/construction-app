@@ -1,6 +1,7 @@
 import { ChecklistStatus } from "../models/tasks";
 import type { Task } from "../models/tasks";
 import { Trash2, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { getStatusBgClass } from "./statusColors";
 
 export interface TaskSidebarProps {
   tasks: Task[];
@@ -38,9 +39,9 @@ export default function TaskSidebar({
       {/* Toggle button */}
       <button
         onClick={onToggle}
-        className="absolute -right-4 top-4 w-8 h-8 rounded-full flex items-center justify-center bg-gray-200 dark:bg-gray-700 shadow"
+        className="cursor-pointer absolute -right-14 top-4 w-16 h-16 rounded-full flex items-center justify-center bg-yellow-500 shadow"
       >
-        {open ? <ChevronsLeft size={16} /> : <ChevronsRight size={16} />}
+        {open ? <ChevronsLeft size={40} /> : <ChevronsRight size={40} />}
       </button>
 
       {/* Content */}
@@ -86,7 +87,7 @@ export default function TaskSidebar({
                 </span>
                 <select
                   onClick={(e) => e.stopPropagation()}
-                  className="text-xs border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5 bg-transparent"
+                  className={`text-xs border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5 bg-transparent outline-none transition-colors duration-150 ${getStatusBgClass(item.status)}`}
                   value={item.status}
                   onChange={(e) =>
                     onStatusChange(

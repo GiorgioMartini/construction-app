@@ -3,6 +3,7 @@ import * as Popover from "@radix-ui/react-popover";
 import { Trash2 } from "lucide-react";
 import type { Task } from "../models/tasks";
 import { ChecklistStatus } from "../models/tasks";
+import { getStatusBgClass } from "./statusColors";
 
 export interface TaskPopoverProps {
   task: Task;
@@ -70,6 +71,7 @@ export default function TaskPopover({
               onChange={(e) =>
                 onStatusChange(item.id, e.target.value as ChecklistStatus)
               }
+              className={`w-28 p-1 rounded-md border border-gray-300 dark:border-gray-600 text-xs outline-none transition-colors duration-150 ${getStatusBgClass(item.status)}`}
             >
               {Object.values(ChecklistStatus).map((status) => (
                 <option key={status} value={status}>
