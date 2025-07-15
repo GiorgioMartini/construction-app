@@ -7,9 +7,10 @@ import type { Task, ChecklistItem } from "../models/tasks";
 import type { RxDocument } from "rxdb";
 import { ChecklistStatus } from "../models/tasks";
 import { nanoid } from "nanoid";
+import { Trash2 } from "lucide-react";
 
 const DEFAULT_CHECKLIST: ChecklistItem[] = [
-  { id: nanoid(), text: "Measure area", status: ChecklistStatus.NotStarted },
+  { id: nanoid(), text: "Measure area", status: ChecklistStatus.FinalCheck },
 ];
 
 export default function Plan() {
@@ -226,33 +227,61 @@ function TaskPin({
             </Popover.Anchor>
             <Popover.Content
               sideOffset={8}
-              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-xl w-48 z-50"
+              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-xl w-72 z-50"
             >
-              <div className="flex justify-between items-center mb-2">
+              <div className="flex items-center mb-2">
                 <span className="font-semibold text-sm text-gray-800 dark:text-gray-100">
                   Task
                 </span>
                 <button
+                  onClick={onDelete}
+                  aria-label="Delete Task"
+                  className="ml-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                >
+                  <Trash2 size={16} />
+                </button>
+                <button
                   onClick={onSelect}
-                  className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                  className="ml-auto text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                 >
                   ×
                 </button>
               </div>
               {task.checklist.map((item) => (
-                <div
-                  key={item.id}
-                  className="text-sm text-gray-700 dark:text-gray-300 mb-1"
-                >
-                  {item.text}
+                <div className="flex justify-between items-center mb-2">
+                  <div
+                    key={item.id}
+                    className="text-sm text-gray-700 dark:text-gray-300 mb-1"
+                  >
+                    {item.text}
+                  </div>
+                  <select
+                    value={item.status}
+                    onChange={(e) => {
+                      console.log(
+                        "[TaskPin] checklist item status changed",
+                        e.target.value
+                      );
+                    }}
+                  >
+                    {Object.values(ChecklistStatus).map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               ))}
-              <button
-                onClick={onDelete}
-                className="mt-2 text-red-600 dark:text-red-400 hover:underline hover:text-red-700 dark:hover:text-red-300 text-sm"
-              >
-                Delete
-              </button>
+              <div className="flex justify-between items-center mb-2">
+                <input
+                  type="text"
+                  placeholder="Add a new checklist item"
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md"
+                />
+                <button className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-md">
+                  Add
+                </button>
+              </div>
             </Popover.Content>
           </Popover.Root>
         </div>
