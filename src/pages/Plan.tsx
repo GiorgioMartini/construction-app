@@ -90,6 +90,80 @@ export default function Plan() {
     if (selected === taskId) setSelected(null);
   };
 
+  // Add new checklist item to a task
+  const addChecklistItem = async (taskId: string, text: string) => {
+    const newItem: ChecklistItem = {
+      id: nanoid(),
+      text,
+      status: ChecklistStatus.NotStarted,
+    };
+
+    // Persist to DB first (best-effort)
+    if (db) {
+      try {
+        const doc = await db.tasks!.findOne(taskId).exec();
+        if (doc) {
+          await doc.incrementalModify((d: Task) => ({
+            ...d,
+            checklist: [...d.checklist, newItem],
+            updatedAt: Date.now(),
+          }));
+        }
+      } catch (err) {
+        console.error("[addChecklistItem] DB update error", err);
+      }
+    }
+
+    // Update local state so UI feels snappy
+    setTasks((previousTasks) =>
+      previousTasks.map((task) =>
+        task.id === taskId
+          ? { ...task, checklist: [...task.checklist, newItem] }
+          : task
+      )
+    );
+  };
+
+  // Update status of an existing checklist item
+  const updateChecklistStatus = async (
+    taskId: string,
+    itemId: string,
+    status: ChecklistStatus
+  ) => {
+    if (db) {
+      try {
+        const taskDoc = await db.tasks!.findOne(taskId).exec();
+        if (taskDoc)
+          await taskDoc.incrementalModify((currentTask: Task) => ({
+            ...currentTask,
+            checklist: currentTask.checklist.map((checklistItem) =>
+              checklistItem.id === itemId
+                ? { ...checklistItem, status }
+                : checklistItem
+            ),
+            updatedAt: Date.now(),
+          }));
+      } catch (err) {
+        console.error("[updateChecklistStatus]", err);
+      }
+    }
+
+    setTasks((previousTasks) =>
+      previousTasks.map((task) =>
+        task.id === taskId
+          ? {
+              ...task,
+              checklist: task.checklist.map((checklistItem) =>
+                checklistItem.id === itemId
+                  ? { ...checklistItem, status }
+                  : checklistItem
+              ),
+            }
+          : task
+      )
+    );
+  };
+
   const handleImgClick = (e: React.MouseEvent) => {
     // If a drag just occurred, ignore this click so we don't create a new pin
     if (isDraggingRef.current) return;
@@ -114,26 +188,30 @@ export default function Plan() {
           className="select-none cursor-crosshair max-w-full opacity-50"
           style={{ position: "relative", zIndex: 0 }}
         />
-        {tasks.map((t) => (
+        {tasks.map((task) => (
           <TaskPin
-            key={`${t.id}-${t.xPct.toFixed(2)}-${t.yPct.toFixed(2)}`}
-            task={t}
-            selected={selected === t.id}
+            key={`${task.id}-${task.xPct.toFixed(2)}-${task.yPct.toFixed(2)}`}
+            task={task}
+            selected={selected === task.id}
             onSelect={() =>
-              setSelected((prev) => (prev === t.id ? null : t.id))
+              setSelected((prev) => (prev === task.id ? null : task.id))
             }
             onDragStart={() => {
               isDraggingRef.current = true;
             }}
             onDragEnd={(x, y) => {
               // update position
-              updateTaskPos(t.id, x, y);
+              updateTaskPos(task.id, x, y);
               // allow the click that Draggable emits on stop to be ignored, then re-enable
               setTimeout(() => (isDraggingRef.current = false), 0);
             }}
             onDelete={() => {
-              deleteTask(t.id);
+              deleteTask(task.id);
             }}
+            onAddItem={(text) => addChecklistItem(task.id, text)}
+            onStatusChange={(itemId, status) =>
+              updateChecklistStatus(task.id, itemId, status as ChecklistStatus)
+            }
           />
         ))}
 
@@ -154,6 +232,8 @@ interface PinProps {
   onDragStart: () => void;
   onDragEnd: (xPct: number, yPct: number) => void;
   onDelete: () => void;
+  onAddItem: (text: string) => void;
+  onStatusChange: (itemId: string, status: ChecklistStatus) => void;
 }
 
 function TaskPin({
@@ -163,11 +243,22 @@ function TaskPin({
   onDragEnd,
   onDelete,
   onDragStart,
+  onAddItem,
+  onStatusChange,
 }: PinProps) {
   const pinRef = useRef<HTMLDivElement>(null);
   // Track if any movement occurred during this drag interaction
   const dragged = useRef(false);
   // const [isbeingHovered, setIsbeingHovered] = useState(false);
+
+  const [newItemText, setNewItemText] = useState("");
+
+  const handleAddItem = () => {
+    const trimmed = newItemText.trim();
+    if (!trimmed) return;
+    onAddItem(trimmed);
+    setNewItemText("");
+  };
 
   const handleStop = () => {
     if (!pinRef.current) return;
@@ -257,12 +348,9 @@ function TaskPin({
                   </div>
                   <select
                     value={item.status}
-                    onChange={(e) => {
-                      console.log(
-                        "[TaskPin] checklist item status changed",
-                        e.target.value
-                      );
-                    }}
+                    onChange={(e) =>
+                      onStatusChange(item.id, e.target.value as ChecklistStatus)
+                    }
                   >
                     {Object.values(ChecklistStatus).map((status) => (
                       <option key={status} value={status}>
@@ -275,10 +363,21 @@ function TaskPin({
               <div className="flex justify-between items-center mb-2">
                 <input
                   type="text"
-                  placeholder="Add a new checklist item"
+                  placeholder="Add a new item"
+                  value={newItemText}
+                  onChange={(e) => setNewItemText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddItem();
+                    }
+                  }}
                   className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md"
                 />
-                <button className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-md">
+                <button
+                  className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-md"
+                  onClick={handleAddItem}
+                >
                   Add
                 </button>
               </div>
