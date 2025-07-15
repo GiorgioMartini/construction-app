@@ -46,7 +46,7 @@ High-level:
        - Inspiration for design: https://www.figma.com/design/ItlX4Eej7yhKq92k29oNSb/Assessment?node-id=1-76
        - A default checklist will be shown for each new task
        - Users will be able to edit, delete and add new checklist items+
-       - Each checklist item can be "checked oof", with the following statuses:
+       - Each checklist item can be "checked off", with the following statuses:
          - No started
          - In progress
          - Blocked
