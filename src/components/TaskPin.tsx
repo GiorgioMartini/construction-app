@@ -78,7 +78,11 @@ export default function TaskPin({
         <div style={{ transform: "translate(-50%, -50%)" }}>
           <div
             id="pin"
-            className="w-5 h-5 bg-red-600 rounded-full border-2 border-white shadow-lg"
+            className={`w-5 h-5 rounded-full border-2 shadow-lg ${
+              selected
+                ? "bg-red-700 border-blue-500 ring-2 ring-blue-500"
+                : "bg-red-600 border-white"
+            }`}
           />
 
           {/* Popover with checklist functionality */}

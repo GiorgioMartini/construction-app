@@ -12,6 +12,8 @@ export interface TaskSidebarProps {
     itemId: string,
     status: ChecklistStatus
   ) => void | Promise<void>;
+  selectedTaskId: string | null;
+  onTaskSelect: (taskId: string) => void;
 }
 
 /**
@@ -24,6 +26,8 @@ export default function TaskSidebar({
   onToggle,
   onDeleteTask,
   onStatusChange,
+  selectedTaskId,
+  onTaskSelect,
 }: TaskSidebarProps) {
   return (
     <div
@@ -50,7 +54,12 @@ export default function TaskSidebar({
         {tasks.map((task) => (
           <div
             key={task.id}
-            className="border border-gray-200 dark:border-gray-700 rounded-md p-3"
+            onClick={() => onTaskSelect(task.id)}
+            className={`border rounded-md p-3 cursor-pointer transition-colors select-none ${
+              selectedTaskId === task.id
+                ? "border-blue-500 bg-blue-50 dark:bg-blue-900"
+                : "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+            }`}
           >
             {/* Task header */}
             <div className="flex items-center mb-2">
@@ -58,7 +67,10 @@ export default function TaskSidebar({
                 {task.title}
               </h3>
               <button
-                onClick={() => onDeleteTask(task.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteTask(task.id);
+                }}
                 className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                 aria-label="Delete task"
               >
@@ -73,6 +85,7 @@ export default function TaskSidebar({
                   {item.text}
                 </span>
                 <select
+                  onClick={(e) => e.stopPropagation()}
                   className="text-xs border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5 bg-transparent"
                   value={item.status}
                   onChange={(e) =>

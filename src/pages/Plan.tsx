@@ -186,6 +186,8 @@ export default function Plan() {
         tasks={tasks}
         onDeleteTask={deleteTask}
         onStatusChange={updateChecklistStatus}
+        selectedTaskId={selected}
+        onTaskSelect={(id) => setSelected((prev) => (prev === id ? null : id))}
       />
       <div className="relative inline-block">
         <img
