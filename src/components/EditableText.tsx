@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Check } from "lucide-react";
 
 interface EditableTextProps {
   text: string;
@@ -56,14 +55,6 @@ export default function EditableText({
         className="flex-1 border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5 text-sm bg-white dark:bg-gray-800"
         onClick={(e) => e.stopPropagation()}
       />
-      <button
-        onClick={save}
-        className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
-        aria-label="Save"
-        onClickCapture={(e) => e.stopPropagation()}
-      >
-        <Check size={16} />
-      </button>
     </span>
   );
 }

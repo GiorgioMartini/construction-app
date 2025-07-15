@@ -42,7 +42,7 @@ export default function TaskSidebar({
       {/* Toggle button */}
       <button
         onClick={onToggle}
-        className="cursor-pointer absolute -right-14 top-4 w-16 h-16 rounded-full flex items-center justify-center bg-yellow-500 shadow"
+        className="cursor-pointer absolute -right-16 w-16 h-16 flex items-center justify-center bg-yellow-500 shadow"
       >
         {open ? <ChevronsLeft size={40} /> : <ChevronsRight size={40} />}
       </button>
