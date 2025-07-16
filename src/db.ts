@@ -1,4 +1,4 @@
-import { createRxDatabase, removeRxDatabase } from "rxdb";
+import { createRxDatabase } from "rxdb";
 import type { RxDatabase } from "rxdb";
 import { getRxStorageDexie } from "rxdb/plugins/storage-dexie";
 import { userSchema } from "./models/userSchema";
@@ -7,67 +7,35 @@ import { taskSchema } from "./models/taskSchema";
 // Keep track of database instances to avoid recreating
 const dbInstances = new Map<string, RxDatabase>();
 
+/**
+ * Initialize and return a cached RxDB instance.
+ * Only creates the database and collections once per name.
+ * Throws an error if initialization fails.
+ */
 export async function initDB(name: string): Promise<RxDatabase> {
-  // Check if we already have this database instance
+  // Return cached instance if it exists
   if (dbInstances.has(name)) {
     return dbInstances.get(name)!;
   }
 
-  // First attempt - try normal initialization
   try {
+    // Create the database instance
     const db = await createRxDatabase({
       name,
       storage: getRxStorageDexie(),
     });
 
+    // Add collections (users, tasks)
     await db.addCollections({
       users: { schema: userSchema },
       tasks: { schema: taskSchema },
     });
 
+    // Cache and return the instance
     dbInstances.set(name, db);
     return db;
-  } catch {
-    // Second attempt - try connecting to existing database
-    try {
-      const db = await createRxDatabase({
-        name,
-        storage: getRxStorageDexie(),
-        ignoreDuplicate: true,
-      });
-
-      // Try to add collections (they might already exist)
-      try {
-        await db.addCollections({
-          users: { schema: userSchema },
-          tasks: { schema: taskSchema },
-        });
-      } catch {
-        // Collections already exist, which is fine
-      }
-
-      dbInstances.set(name, db);
-      return db;
-    } catch {
-      // Last resort - remove and recreate
-      try {
-        await removeRxDatabase(name, getRxStorageDexie());
-
-        const db = await createRxDatabase({
-          name,
-          storage: getRxStorageDexie(),
-        });
-
-        await db.addCollections({
-          users: { schema: userSchema },
-          tasks: { schema: taskSchema },
-        });
-
-        dbInstances.set(name, db);
-        return db;
-      } catch (recreateError) {
-        throw new Error(`Failed to initialize database: ${recreateError}`);
-      }
-    }
+  } catch (err) {
+    // If initialization fails, surface the error
+    throw new Error(`Failed to initialize database: ${err}`);
   }
 }
