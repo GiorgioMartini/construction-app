@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import Draggable from "react-draggable";
 import type { Task } from "../models/tasks";
 import { ChecklistStatus } from "../models/tasks";
@@ -16,10 +16,6 @@ export interface TaskPinProps {
   onTitleChange: (newTitle: string) => void;
 }
 
-/**
- * Draggable red pin anchored on the construction plan.
- * Encapsulates checklist CRUD & status updates inside a Radix popover.
- */
 export default function TaskPin({
   task,
   selected,
@@ -33,8 +29,8 @@ export default function TaskPin({
 }: TaskPinProps) {
   const pinRef = useRef<HTMLDivElement>(null);
   const wasDragged = useRef(false);
+  const [hideAfterDrag, setHideAfterDrag] = useState(false);
 
-  /* ----------------------------- Drag helpers ---------------------------- */
   const handleStop = () => {
     if (!pinRef.current) return;
 
@@ -43,13 +39,19 @@ export default function TaskPin({
       pinRef.current.parentElement as HTMLElement
     ).getBoundingClientRect();
 
-    // pinRef is positioned at the pin's centre already.
     const xPct = ((nodeRect.left - parentRect.left) / parentRect.width) * 100;
     const yPct = ((nodeRect.top - parentRect.top) / parentRect.height) * 100;
 
+    // Hide the pin briefly to prevent flicker from old position
+    setHideAfterDrag(true);
+
     onDragEnd(xPct, yPct);
+
     // Clear inline transform from react-draggable
     pinRef.current.style.transform = "";
+
+    // Show the pin again after a brief delay
+    setTimeout(() => setHideAfterDrag(false), 10);
 
     if (!wasDragged.current) onSelect();
   };
@@ -72,7 +74,7 @@ export default function TaskPin({
         style={{
           left: `${task.xPct}%`,
           top: `${task.yPct}%`,
-          // zIndex: 20,
+          opacity: hideAfterDrag ? 0 : 1,
         }}
         className="cursor-pointer select-none z-50 absolute"
       >
@@ -86,7 +88,6 @@ export default function TaskPin({
             }`}
           />
 
-          {/* Popover with checklist functionality */}
           <TaskPopover
             task={task}
             selected={selected}
