@@ -49,8 +49,7 @@ export default function Plan() {
           ref={imgRef}
           src={planImg}
           alt="Construction plan"
-          className="select-none cursor-crosshair max-w-full opacity-50"
-          style={{ position: "relative", zIndex: 0 }}
+          className="select-none cursor-crosshair max-w-full opacity-50 relative z-0"
         />
         {tasks.map((task) => (
           <TaskPin

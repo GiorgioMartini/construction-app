@@ -70,12 +70,11 @@ export default function TaskPin({
       <div
         ref={pinRef}
         style={{
-          position: "absolute",
           left: `${task.xPct}%`,
           top: `${task.yPct}%`,
-          zIndex: 20,
+          // zIndex: 20,
         }}
-        className="cursor-pointer select-none z-50"
+        className="cursor-pointer select-none z-50 absolute"
       >
         <div style={{ transform: "translate(-50%, -50%)" }}>
           <div
