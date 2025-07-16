@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
 import planImg from "../assets/plan-image.webp";
 import { useAppStore } from "../store";
 import type { Task, ChecklistItem } from "../models/tasks";
@@ -6,7 +6,7 @@ import { ChecklistStatus } from "../models/tasks";
 import { nanoid } from "nanoid";
 import TaskPin from "../components/TaskPin";
 import TaskSidebar from "../components/TaskSidebar";
-import { TaskRepository } from "../services";
+import * as taskRepo from "../services";
 
 const DEFAULT_CHECKLIST: ChecklistItem[] = [
   { id: nanoid(), text: "Measure area", status: ChecklistStatus.FinalCheck },
@@ -24,19 +24,13 @@ export default function Plan() {
   // If dragging, we can ignore click events that would create a new one
   const isDraggingRef = useRef(false);
 
-  // Create repository instance when db is available
-  const taskRepository = useMemo(() => {
-    if (!db) return null;
-    return new TaskRepository(db);
-  }, [db]);
-
   // load tasks for current user
   useEffect(() => {
-    if (!taskRepository || !user) return;
+    if (!db || !user) return;
 
     const loadTasks = async () => {
       try {
-        const loaded = await taskRepository.getTasks(user);
+        const loaded = await taskRepo.getTasks(db, user);
         setTasks(loaded);
         console.log("[Plan] loaded", loaded.length, "tasks", loaded);
       } catch (error) {
@@ -45,14 +39,14 @@ export default function Plan() {
     };
 
     loadTasks();
-  }, [taskRepository, user]);
+  }, [db, user]);
 
   // helpers
   const addTask = async (xPct: number, yPct: number) => {
-    if (!taskRepository || !user) return;
+    if (!db || !user) return;
 
     try {
-      const newTask = await taskRepository.createTask({
+      const newTask = await taskRepo.createTask(db, {
         userId: user,
         title: "New task",
         xPct,
@@ -66,10 +60,10 @@ export default function Plan() {
   };
 
   const updateTaskPos = async (taskId: string, xPct: number, yPct: number) => {
-    if (!taskRepository) return;
+    if (!db) return;
 
     try {
-      await taskRepository.updateTaskPosition(taskId, xPct, yPct);
+      await taskRepo.updateTaskPosition(db, taskId, xPct, yPct);
       setTasks((prev) =>
         prev.map((t) => (t.id === taskId ? { ...t, xPct, yPct } : t))
       );
@@ -79,10 +73,10 @@ export default function Plan() {
   };
 
   const deleteTask = async (taskId: string) => {
-    if (!taskRepository) return;
+    if (!db) return;
 
     try {
-      await taskRepository.deleteTask(taskId);
+      await taskRepo.deleteTask(db, taskId);
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
       if (selected === taskId) setSelected(null);
     } catch (error) {
@@ -92,10 +86,10 @@ export default function Plan() {
 
   // Add new checklist item to a task
   const addChecklistItem = async (taskId: string, text: string) => {
-    if (!taskRepository) return;
+    if (!db) return;
 
     try {
-      const newItem = await taskRepository.addChecklistItem(taskId, text);
+      const newItem = await taskRepo.addChecklistItem(db, taskId, text);
 
       // Update local state so UI feels snappy
       setTasks((previousTasks) =>
@@ -116,10 +110,10 @@ export default function Plan() {
     itemId: string,
     status: ChecklistStatus
   ) => {
-    if (!taskRepository) return;
+    if (!db) return;
 
     try {
-      await taskRepository.updateChecklistStatus(taskId, itemId, status);
+      await taskRepo.updateChecklistStatus(db, taskId, itemId, status);
 
       setTasks((previousTasks) =>
         previousTasks.map((task) =>
@@ -142,10 +136,10 @@ export default function Plan() {
 
   // Update task title
   const updateTaskTitle = async (taskId: string, newTitle: string) => {
-    if (!taskRepository) return;
+    if (!db) return;
 
     try {
-      await taskRepository.updateTaskTitle(taskId, newTitle);
+      await taskRepo.updateTaskTitle(db, taskId, newTitle);
       setTasks((prev) =>
         prev.map((t) => (t.id === taskId ? { ...t, title: newTitle } : t))
       );
