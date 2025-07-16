@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import Login from "./pages/Login";
 import Plan from "./pages/Plan";
 import { useAppStore } from "./store";
+import Home from "./pages/Home";
 
 export default function App() {
   const { user, isInitialized, initializeFromStorage } = useAppStore();
@@ -26,6 +27,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route
           path="/plan"

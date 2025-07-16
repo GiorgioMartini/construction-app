@@ -1,14 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import * as taskRepo from "../services";
 import { useAppStore } from "../store";
-import type { Task, ChecklistItem, ChecklistStatus } from "../models/tasks";
+import type { Task, ChecklistItem } from "../models/tasks";
+import { ChecklistStatus } from "../models/tasks";
 import { nanoid } from "nanoid";
 
 const DEFAULT_CHECKLIST: ChecklistItem[] = [
   {
     id: nanoid(),
     text: "Measure area",
-    status: "final-check" as ChecklistStatus,
+    status: ChecklistStatus.NotStarted,
   },
 ];
 

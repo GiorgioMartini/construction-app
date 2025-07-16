@@ -88,7 +88,7 @@ export default function EditableText({
       <button
         type="button"
         onClick={cancel}
-        className="ml-1 px-2 py-0.5 text-xs rounded bg-gray-300 text-gray-700 hover:bg-gray-40 mr-2"
+        className="ml-1 px-2 py-0.5 text-xs rounded bg-gray-300 text-gray-700 hover:bg-gray-40"
         aria-label="Cancel"
         tabIndex={0}
       >

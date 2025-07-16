@@ -77,7 +77,7 @@ export default function TaskSidebar({
                   e.stopPropagation();
                   onDeleteTask(task.id);
                 }}
-                className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 ml-2"
                 aria-label="Delete task"
               >
                 <Trash2 size={16} />

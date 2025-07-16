@@ -41,7 +41,7 @@ export default function TaskPopover({
       </Popover.Anchor>
       <Popover.Content
         sideOffset={8}
-        className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-xl w-72 z-50"
+        className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-xl w-80 z-50"
       >
         {/* Header */}
         <div className="flex items-center mb-2">
@@ -55,11 +55,11 @@ export default function TaskPopover({
             aria-label="Delete Task"
             className="ml-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
           >
-            <Trash2 size={16} />
+            <Trash2 className="mr-2" size={18} />
           </button>
           <button
             onClick={onSelect}
-            className="ml-auto text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+            className="text-3xl ml-auto text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
           >
             ×
           </button>
