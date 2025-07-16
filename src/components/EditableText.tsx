@@ -9,7 +9,6 @@ interface EditableTextProps {
 
 /**
  * Click-to-edit text component.
- * Shows plain text; on click switches to input + check button.
  * Calls onSave with trimmed text when confirmed.
  */
 export default function EditableText({

@@ -9,7 +9,6 @@ const dbInstances = new Map<string, RxDatabase>();
 
 /**
  * Initialize and return a cached RxDB instance.
- * Only creates the database and collections once per name.
  * Throws an error if initialization fails.
  */
 export async function initDB(name: string): Promise<RxDatabase> {

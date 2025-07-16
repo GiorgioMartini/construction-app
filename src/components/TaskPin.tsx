@@ -83,7 +83,7 @@ export default function TaskPin({
             id="pin"
             className={`w-5 h-5 rounded-full border-2 shadow-lg ${
               selected
-                ? "bg-red-700 border-blue-500 ring-2 ring-blue-500"
+                ? "bg-red-700 border-blue-500 ring-4 ring-blue-500"
                 : "bg-red-600 border-white"
             }`}
           />

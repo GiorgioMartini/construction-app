@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import Login from "./pages/Login";
 import Plan from "./pages/Plan";
-import Home from "./pages/Home";
 import { useAppStore } from "./store";
 
 export default function App() {
@@ -32,7 +31,6 @@ export default function App() {
           path="/plan"
           element={hasUser ? <Plan /> : <Navigate to="/login" replace />}
         />
-        <Route path="/" element={<Home />} />
         <Route
           path="*"
           element={<Navigate to={hasUser ? "/plan" : "/login"} replace />}
